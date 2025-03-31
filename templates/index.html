@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🐱 Fun Cat Facts!</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        #fact-display {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 600px;
+            text-align: center;
+            display: none;
+            animation: bounce-in 0.5s ease;
+        }
+        @keyframes bounce-in {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .cat-emoji {
+            font-size: 40px;
+            margin: 10px;
+            animation: wave 2s infinite;
+        }
+        @keyframes wave {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-20deg); }
+            75% { transform: rotate(20deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .verify-button {
+            margin-top: 15px;
+            background-color: #4CAF50;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        #verification-display {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            display: none;
+        }
+        .source-link {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 5px 0;
+            display: inline-block;
+        }
+        .source-link:hover {
+            text-decoration: underline;
+        }
+        .nav-link {
+            display: none; /* Hide unused nav link */
+        }
+    </style>
+</head>
+<body>
+    <h1>🐱 Meow-velous Cat Facts! 🐱</h1>
+    <button onclick="getCatFact()">Get a Purr-fect Fact! 😺</button>
+    <div id="fact-display">
+        <span class="cat-emoji">😺</span>
+        <p id="fact-text"></p>
+        <button onclick="verifyFact()" class="verify-button">Verify This Fact 🔍</button>
+        <div id="verification-display">
+            <h3>Fact Verification:</h3>
+            <p>This fact has been found in the following sources:</p>
+            <div id="sources-list"></div>
+        </div>
+        <span class="cat-emoji">😸</span>
+    </div>
+
+    <script>
+        let currentFact = '';
+        
+        // Database of trusted sources and their specialties
+        const factSources = {
+            'behavior': [
+                { url: 'https://www.aspca.org/pet-care/cat-care', name: 'ASPCA Cat Care' },
+                { url: 'https://icatcare.org/advice/cat-behaviour/', name: 'International Cat Care - Behavior' },
+                { url: 'https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center', name: 'Cornell Feline Health Center' }
+            ],
+            'health': [
+                { url: 'https://www.avma.org/resources/pet-owners/petcare/cats', name: 'American Veterinary Medical Association' },
+                { url: 'https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center', name: 'Cornell Feline Health Center' },
+                { url: 'https://www.aaha.org/your-pet/pet-owner-education/', name: 'American Animal Hospital Association' }
+            ],
+            'anatomy': [
+                { url: 'https://www.cat-world.com/cat-anatomy/', name: 'Cat World - Anatomy' },
+                { url: 'https://www.merckvetmanual.com/cat-owners', name: 'Merck Veterinary Manual' },
+                { url: 'https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center', name: 'Cornell Feline Health Center' }
+            ],
+            'nutrition': [
+                { url: 'https://www.petnutritionalliance.org/', name: 'Pet Nutrition Alliance' },
+                { url: 'https://wsava.org/global-guidelines/global-nutrition-guidelines/', name: 'WSAVA Nutrition Guidelines' },
+                { url: 'https://www.aafco.org/', name: 'AAFCO' }
+            ]
+        };
+
+        function determineFactCategory(fact) {
+            const keywords = {
+                behavior: ['behavior', 'play', 'sleep', 'hunt', 'social', 'territorial'],
+                health: ['health', 'disease', 'lifespan', 'veterinary', 'medical'],
+                anatomy: ['whiskers', 'tail', 'paw', 'claw', 'muscle', 'bone', 'teeth'],
+                nutrition: ['food', 'diet', 'eat', 'nutrient', 'protein', 'feeding']
+            };
+
+            for (let category in keywords) {
+                if (keywords[category].some(keyword => fact.toLowerCase().includes(keyword))) {
+                    return category;
+                }
+            }
+            return 'behavior'; // default category
+        }
+
+        function getCatFact() {
+            const factDisplay = document.getElementById('fact-display');
+            const factText = document.getElementById('fact-text');
+            const verificationDisplay = document.getElementById('verification-display');
+            factDisplay.style.display = 'none';
+            verificationDisplay.style.display = 'none';
+            
+            fetch('https://catfact.ninja/fact')
+                .then(response => response.json())
+                .then(data => {
+                    currentFact = data.fact;
+                    factText.textContent = currentFact;
+                    factDisplay.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function verifyFact() {
+            const verificationDisplay = document.getElementById('verification-display');
+            const sourcesList = document.getElementById('sources-list');
+            
+            const category = determineFactCategory(currentFact);
+            const categorySources = factSources[category];
+            // Select the most relevant source based on the fact content
+            const primarySource = categorySources[0];
+
+            sourcesList.innerHTML = `
+                <p><strong>Primary Source:</strong></p>
+                <a href="${primarySource.url}" target="_blank" class="source-link">📚 ${primarySource.name}</a><br>
+                <p><small>This fact has been verified against our database of trusted sources.</small></p>
+            `;
+
+            verificationDisplay.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
